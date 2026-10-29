@@ -148,7 +148,9 @@ abstract contract Automator is Transformer, Swapper, IERC721Receiver, Reentrancy
         if (token.isAddressZero()) {
             (bool sent,) = to.call{value: amount}("");
             if (!sent) {
-                revert EtherSendFailed();
+                // Fallback: wrap native ETH into WETH and transfer standard ERC-20 to avoid DoS on smart contract owners
+                weth.deposit{value: amount}();
+                SafeERC20.safeTransfer(IERC20(address(weth)), to, amount);
             }
         } else {
             SafeERC20.safeTransfer(IERC20(Currency.unwrap(token)), to, amount);
