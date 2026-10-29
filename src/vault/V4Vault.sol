@@ -962,7 +962,10 @@ contract V4Vault is ERC20, Multicall, Ownable2Step, IVault, IERC721Receiver, Con
 
         debtSharesTotal = debtSharesTotal - debtShares;
 
-        dailyDebtIncreaseLimitLeft = dailyDebtIncreaseLimitLeft + state.debt;
+        uint256 maxDebtLimit =
+            _calculateDailyLimit(state.newLendExchangeRateX96, dailyDebtIncreaseLimitMin, MAX_DAILY_DEBT_INCREASE_X32);
+        uint256 newLimitLeft = dailyDebtIncreaseLimitLeft + state.debt;
+        dailyDebtIncreaseLimitLeft = newLimitLeft > maxDebtLimit ? maxDebtLimit : newLimitLeft;
 
         // remove debt from loan before external collateral payout callbacks
         _cleanupLoan(params.tokenId, state.newDebtExchangeRateX96, state.newLendExchangeRateX96);
@@ -1288,7 +1291,10 @@ contract V4Vault is ERC20, Multicall, Ownable2Step, IVault, IERC721Receiver, Con
         debtSharesTotal = debtSharesTotal - shares;
 
         // when amounts are repayed - they maybe borrowed again
-        dailyDebtIncreaseLimitLeft = dailyDebtIncreaseLimitLeft + assets;
+        uint256 maxDebtLimit =
+            _calculateDailyLimit(newLendExchangeRateX96, dailyDebtIncreaseLimitMin, MAX_DAILY_DEBT_INCREASE_X32);
+        uint256 newLimitLeft = dailyDebtIncreaseLimitLeft + assets;
+        dailyDebtIncreaseLimitLeft = newLimitLeft > maxDebtLimit ? maxDebtLimit : newLimitLeft;
 
         _updateAndCheckCollateral(
             tokenId, newDebtExchangeRateX96, newLendExchangeRateX96, loanDebtShares + shares, loanDebtShares
